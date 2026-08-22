@@ -1,0 +1,18 @@
+# Secrets
+firebase-service-account.json
+.env
+
+# Databases
+*.sqlite3
+*.sqlite3-journal
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environments
+.venv/
+venv/
+env/
