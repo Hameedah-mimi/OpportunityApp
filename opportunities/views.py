@@ -1,134 +1,159 @@
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth import get_user_model
+
+from rest_framework import generics, status
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Opportunity, OpportunityReport
+from .models import Opportunity
 from .serializers import (
     OpportunitySerializer,
     OpportunityReportSerializer,
 )
+from .services import (
+    import_opportunity,
+    import_perkcommons_opportunity,
+)
 
 
-class OpportunityListCreateView(APIView):
-    permission_classes = [IsAuthenticated]
+User = get_user_model()
 
-    def get(self, request):
 
-        opportunities = Opportunity.objects.filter(
-            status='verified'
+class OpportunityListView(generics.ListAPIView):
+
+    serializer_class = OpportunitySerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+
+        queryset = Opportunity.objects.filter(
+            status="verified"
+        ).order_by("-created_at")
+
+        category = self.request.query_params.get(
+            "category"
         )
 
-        category = request.query_params.get(
-            'category'
-        )
-
-        location = request.query_params.get(
-            'location'
-        )
-
-        funding_type = request.query_params.get(
-            'funding_type'
+        search = self.request.query_params.get(
+            "search"
         )
 
         if category:
-            opportunities = opportunities.filter(
+            queryset = queryset.filter(
                 category=category
             )
 
-        if location:
-            opportunities = opportunities.filter(
-                location__icontains=location
+        if search:
+            queryset = queryset.filter(
+                title__icontains=search
             )
 
-        if funding_type:
-            opportunities = opportunities.filter(
-                funding_type=funding_type
-            )
-
-        serializer = OpportunitySerializer(
-            opportunities,
-            many=True
-        )
-
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
-        )
-
-    def post(self, request):
-
-        serializer = OpportunitySerializer(
-            data=request.data
-        )
-
-        if serializer.is_valid():
-
-            opportunity = serializer.save()
-
-            return Response(
-                OpportunitySerializer(
-                    opportunity
-                ).data,
-                status=status.HTTP_201_CREATED
-            )
-
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        return queryset
 
 
-class OpportunityDetailView(APIView):
+class OpportunityDetailView(generics.RetrieveAPIView):
+
+    queryset = Opportunity.objects.filter(
+        status="verified"
+    )
+
+    serializer_class = OpportunitySerializer
+    permission_classes = [AllowAny]
+
+
+class OpportunityReportCreateView(
+    generics.CreateAPIView
+):
+
+    serializer_class = OpportunityReportSerializer
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, opportunity_id):
+    def perform_create(self, serializer):
+
+        serializer.save(
+            user=self.request.user
+        )
+
+
+class ImportOpportunityView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
 
         try:
-            opportunity = Opportunity.objects.get(
-                id=opportunity_id
+
+            opportunity, created = import_opportunity(
+                request.data,
+                owner=request.user
             )
-        except Opportunity.DoesNotExist:
+
+        except Exception as error:
+
             return Response(
                 {
-                    'message': 'Opportunity not found.'
+                    "message": str(error)
                 },
-                status=status.HTTP_404_NOT_FOUND
+                status=status.HTTP_400_BAD_REQUEST
             )
 
-        serializer = OpportunitySerializer(
-            opportunity
-        )
-
         return Response(
-            serializer.data,
-            status=status.HTTP_200_OK
+            {
+                "message": (
+                    "Opportunity created."
+                    if created
+                    else "Opportunity already exists."
+                ),
+                "id": opportunity.id,
+                "title": opportunity.title,
+                "source": opportunity.source,
+            },
+            status=(
+                status.HTTP_201_CREATED
+                if created
+                else status.HTTP_200_OK
+            )
         )
 
 
-class OpportunityReportView(APIView):
+class PerkCommonsImportView(APIView):
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
 
-        serializer = OpportunityReportSerializer(
-            data=request.data
-        )
+        try:
 
-        if serializer.is_valid():
-
-            report = serializer.save(
-                user=request.user
+            opportunity, created = (
+                import_perkcommons_opportunity(
+                    request.data,
+                    owner=request.user
+                )
             )
 
+        except Exception as error:
+
             return Response(
-                OpportunityReportSerializer(
-                    report
-                ).data,
-                status=status.HTTP_201_CREATED
+                {
+                    "message": str(error)
+                },
+                status=status.HTTP_400_BAD_REQUEST
             )
 
         return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
+            {
+                "message": (
+                    "Opportunity imported successfully."
+                    if created
+                    else "Opportunity already exists."
+                ),
+                "id": opportunity.id,
+                "title": opportunity.title,
+                "source": opportunity.source,
+            },
+            status=(
+                status.HTTP_201_CREATED
+                if created
+                else status.HTTP_200_OK
+            )
         )

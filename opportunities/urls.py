@@ -1,28 +1,43 @@
 from django.urls import path
 
 from .views import (
-    OpportunityListCreateView,
+    OpportunityListView,
     OpportunityDetailView,
-    OpportunityReportView,
+    OpportunityReportCreateView,
+    ImportOpportunityView,
+    PerkCommonsImportView,
 )
 
 
 urlpatterns = [
+
     path(
-        '',
-        OpportunityListCreateView.as_view(),
-        name='opportunity-list'
+        "",
+        OpportunityListView.as_view(),
+        name="opportunity-list",
     ),
 
     path(
-        '<int:opportunity_id>/',
+        "<int:pk>/",
         OpportunityDetailView.as_view(),
-        name='opportunity-detail'
+        name="opportunity-detail",
     ),
 
     path(
-        'report/',
-        OpportunityReportView.as_view(),
-        name='opportunity-report'
+        "<int:pk>/report/",
+        OpportunityReportCreateView.as_view(),
+        name="opportunity-report",
+    ),
+
+    path(
+        "import/",
+        ImportOpportunityView.as_view(),
+        name="import-opportunity",
+    ),
+
+    path(
+        "import/perkcommons/",
+        PerkCommonsImportView.as_view(),
+        name="perkcommons-import",
     ),
 ]

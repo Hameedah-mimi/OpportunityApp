@@ -6,6 +6,7 @@ from .views import (
     ForgotPasswordView,
     ResetPasswordView,
     GoogleLoginView,
+    ProfileView,
 )
 
 urlpatterns = [
@@ -45,4 +46,9 @@ urlpatterns = [
         GoogleLoginView.as_view(),
         name="google-login",
     ),
+
+    path(
+    'profile/',
+    ProfileView.as_view(),
+),
 ]

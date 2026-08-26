@@ -121,3 +121,23 @@ class ResetPasswordSerializer(serializers.Serializer):
             )
 
         return data
+
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = [
+            'id',
+            'username',
+            'email',
+            'role',
+            'country',
+            'education_level',
+        ]
+
+        read_only_fields = [
+            'id',
+            'role',
+        ]

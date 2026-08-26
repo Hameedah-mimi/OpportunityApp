@@ -2,4 +2,8 @@ from django.apps import AppConfig
 
 
 class OpportunitiesConfig(AppConfig):
-    name = 'opportunities'
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "opportunities"
+
+    def ready(self):
+        import opportunities.signals

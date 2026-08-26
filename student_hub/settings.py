@@ -43,8 +43,13 @@ INSTALLED_APPS = [
 
     'accounts',
     'profiles',
-    'opportunities',
+    'applications',
+    'organization.apps.OrganizationConfig',
     'notifications',
+
+    'opportunities.apps.OpportunitiesConfig',
+
+    
 ]
 
 MIDDLEWARE = [
@@ -57,13 +62,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
-import os
-
-FIREBASE_CREDENTIALS_PATH = os.path.join(
-    BASE_DIR,
-    "firebase-service-account.json"
-)
 
 ROOT_URLCONF = 'student_hub.urls'
 
@@ -145,6 +143,6 @@ STATIC_URL = 'static/'
 
 AUTH_USER_MODEL = 'accounts.User'
 
-FIREBASE_CREDENTIALS_PATH = BASE_DIR / "firebase-service-account.json"
+FIREBASE_CREDENTIALS_PATH = BASE_DIR / 'firebase-service-account.json'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

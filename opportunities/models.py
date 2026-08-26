@@ -53,7 +53,10 @@ class Opportunity(models.Model):
         blank=True
     )
 
-    deadline = models.DateTimeField()
+    deadline = models.DateTimeField(
+    null=True,
+    blank=True
+)
 
     application_url = models.URLField()
 
@@ -85,6 +88,20 @@ class Opportunity(models.Model):
         max_length=20,
         choices=STATUS_CHOICES,
         default='pending'
+    )
+
+    source = models.CharField(
+        max_length=100,
+        blank=True
+    )
+
+    source_url = models.URLField(
+        blank=True
+    )
+
+    external_id = models.CharField(
+        max_length=255,
+        blank=True
     )
 
     created_at = models.DateTimeField(
@@ -140,3 +157,18 @@ class OpportunityReport(models.Model):
 
     def __str__(self):
         return f"Report - {self.opportunity.title}"
+
+class Organization(models.Model):
+    
+    name = models.CharField(max_length=255)
+
+    description = models.TextField(blank=True)
+
+    website = models.URLField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+class Meta:
+    app_label = 'organization'

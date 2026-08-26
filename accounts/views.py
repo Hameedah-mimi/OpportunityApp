@@ -16,25 +16,26 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from firebase_admin import auth
 
-from . import firebase
-
 from .serializers import (
     RegisterSerializer,
     LoginSerializer,
     ForgotPasswordSerializer,
     ResetPasswordSerializer,
+    ProfileSerializer,
 )
-
 User = get_user_model()
+
+
+# ==========================================
+# REGISTER
+# ==========================================
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
 
-        serializer = RegisterSerializer(
-            data=request.data
-        )
+        serializer = RegisterSerializer(data=request.data)
 
         if serializer.is_valid():
 
@@ -61,6 +62,10 @@ class RegisterView(APIView):
         )
 
 
+# ==========================================
+# NORMAL LOGIN
+# ==========================================
+
 class LoginView(APIView):
     permission_classes = [AllowAny]
 
@@ -72,15 +77,18 @@ class LoginView(APIView):
 
         if serializer.is_valid():
 
-            user = serializer.validated_data['user']
+            user = serializer.validated_data["user"]
 
             refresh = RefreshToken.for_user(user)
 
             return Response(
                 {
-                    "message": "Login successful.",
+                    "message": "Login successful",
+
                     "access": str(refresh.access_token),
+
                     "refresh": str(refresh),
+
                     "user": {
                         "id": user.id,
                         "username": user.username,
@@ -88,16 +96,112 @@ class LoginView(APIView):
                         "role": user.role,
                         "country": user.country,
                         "education_level": user.education_level,
+                    },
+                },
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+
+
+class GoogleLoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+
+        print("GOOGLE REQUEST DATA:", request.data)
+
+        id_token = request.data.get("idToken")
+
+        print("ID TOKEN:", id_token)
+
+        if not id_token:
+            return Response(
+                {
+                    "error": "ID token is required."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+
+        try:
+
+            # Verify Firebase token
+            decoded_token = auth.verify_id_token(id_token)
+
+            email = decoded_token.get("email")
+            name = decoded_token.get("name", "")
+            firebase_uid = decoded_token.get("uid")
+
+            if not email:
+
+                return Response(
+                    {
+                        "error": "Google account has no email."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Find existing Django user
+            user = User.objects.filter(
+                email=email
+            ).first()
+
+            # Create user if they don't already exist
+            if not user:
+
+                user = User.objects.create_user(
+                    username=email,
+                    email=email,
+                    first_name=name,
+                    role="student",
+                )
+
+            # Create Django JWT
+            refresh = RefreshToken.for_user(user)
+
+            return Response(
+                {
+                    "message": "Google login successful.",
+
+                    "access": str(refresh.access_token),
+
+                    "refresh": str(refresh),
+
+                    "user": {
+                        "id": user.id,
+                        "username": user.username,
+                        "email": user.email,
+                        "name": user.first_name,
+                        "role": user.role,
+                        "country": user.country,
+                        "education_level": user.education_level,
+                        "firebase_uid": firebase_uid,
                     }
                 },
                 status=status.HTTP_200_OK
             )
 
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        except Exception as e:
 
+            return Response(
+                {
+                    "error": "Google authentication failed.",
+                    "details": str(e),
+                },
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+
+# ==========================================
+# LOGOUT
+# ==========================================
 
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
@@ -110,6 +214,8 @@ class LogoutView(APIView):
             },
             status=status.HTTP_200_OK
         )
+
+
 
 
 class ForgotPasswordView(APIView):
@@ -128,7 +234,7 @@ class ForgotPasswordView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        email = serializer.validated_data['email']
+        email = serializer.validated_data["email"]
 
         user = User.objects.get(email=email)
 
@@ -139,18 +245,24 @@ class ForgotPasswordView(APIView):
         token = default_token_generator.make_token(user)
 
         reset_link = (
-            f"http://localhost:3000/reset-password/"
+            f"http://localhost:5173/reset-password/"
             f"{uid}/{token}/"
         )
 
         send_mail(
             subject="Student Opportunity Hub Password Reset",
+
             message=(
                 "Use the following link to reset your password:\n\n"
                 f"{reset_link}"
             ),
+
             from_email=None,
-            recipient_list=[user.email],
+
+            recipient_list=[
+                user.email
+            ],
+
             fail_silently=False,
         )
 
@@ -160,6 +272,8 @@ class ForgotPasswordView(APIView):
             },
             status=status.HTTP_200_OK
         )
+
+
 
 
 class ResetPasswordView(APIView):
@@ -178,11 +292,12 @@ class ResetPasswordView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        uid = serializer.validated_data['uid']
-        token = serializer.validated_data['token']
-        password = serializer.validated_data['password']
+        uid = serializer.validated_data["uid"]
+        token = serializer.validated_data["token"]
+        password = serializer.validated_data["password"]
 
         try:
+
             user_id = force_str(
                 urlsafe_base64_decode(uid)
             )
@@ -191,7 +306,12 @@ class ResetPasswordView(APIView):
                 pk=user_id
             )
 
-        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        except (
+            TypeError,
+            ValueError,
+            OverflowError,
+            User.DoesNotExist
+        ):
 
             return Response(
                 {
@@ -222,70 +342,41 @@ class ResetPasswordView(APIView):
             status=status.HTTP_200_OK
         )
 
-class GoogleLoginView(APIView):
-    permission_classes = [AllowAny]
 
-    def post(self, request):
 
-        id_token = request.data.get("idToken")
+class ProfileView(APIView):
+    permission_classes = [IsAuthenticated]
 
-        if not id_token:
-            return Response(
-                {"error": "ID token is required"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+    def get(self, request):
 
-        try:
-            # Verify Firebase token
-            decoded_token = auth.verify_id_token(id_token)
+        serializer = ProfileSerializer(request.user)
 
-            email = decoded_token.get("email")
-            name = decoded_token.get("name", "")
-            firebase_uid = decoded_token.get("uid")
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )
 
-            if not email:
-                return Response(
-                    {"error": "Google account has no email"},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+    def put(self, request):
 
-            # Find existing user or create a new one
-            user, created = User.objects.get_or_create(
-                email=email,
-                defaults={
-                    "username": email,
-                    "first_name": name,
-                    "role": "student",
-                }
-            )
+        serializer = ProfileSerializer(
+            request.user,
+            data=request.data,
+            partial=True
+        )
 
-            # Create JWT tokens
-            refresh = RefreshToken.for_user(user)
+        if serializer.is_valid():
+
+            serializer.save()
 
             return Response(
                 {
-                    "message": "Google login successful.",
-                    "access": str(refresh.access_token),
-                    "refresh": str(refresh),
-                    "user": {
-                        "id": user.id,
-                        "username": user.username,
-                        "email": user.email,
-                        "role": user.role,
-                        "country": user.country,
-                        "education_level": user.education_level,
-                        "firebase_uid": firebase_uid,
-                    }
+                    "message": "Profile updated successfully.",
+                    "user": serializer.data,
                 },
                 status=status.HTTP_200_OK
             )
 
-        except Exception as e:
-
-            return Response(
-                {
-                    "error": "Google authentication failed.",
-                    "details": str(e),
-                },
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
