@@ -44,8 +44,6 @@ INSTALLED_APPS = [
     'accounts',
     'profiles',
     'opportunities',
-    'applications',
-    'organization',
     'notifications',
 ]
 
