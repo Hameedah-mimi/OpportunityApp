@@ -4,7 +4,8 @@ from .views import (
     OpportunityListView,
     OpportunityDetailView,
     OpportunityReportCreateView,
-    ImportOpportunityView,
+    SavedOpportunityListView,
+    SavedOpportunityDeleteView,
     PerkCommonsImportView,
 )
 
@@ -30,9 +31,15 @@ urlpatterns = [
     ),
 
     path(
-        "import/",
-        ImportOpportunityView.as_view(),
-        name="import-opportunity",
+        "saved/",
+        SavedOpportunityListView.as_view(),
+        name="saved-opportunities",
+    ),
+
+    path(
+        "saved/<int:opportunity_id>/",
+        SavedOpportunityDeleteView.as_view(),
+        name="delete-saved-opportunity",
     ),
 
     path(

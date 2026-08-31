@@ -1,5 +1,8 @@
 from django.db import models
 
+from django.db import models
+from django.conf import settings
+
 
 class Opportunity(models.Model):
 
@@ -114,6 +117,36 @@ class Opportunity(models.Model):
 
     def __str__(self):
         return self.title
+
+class SavedOpportunity(models.Model):
+
+    user = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.CASCADE,
+        related_name='saved_opportunities'
+    )
+
+    opportunity = models.ForeignKey(
+        Opportunity,
+        on_delete=models.CASCADE,
+        related_name='saved_by_users'
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'opportunity'],
+                name='unique_saved_opportunity'
+            )
+        ]
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.email} saved {self.opportunity.title}"
 
 
 class OpportunityReport(models.Model):

@@ -1,6 +1,11 @@
 from rest_framework import serializers
 
-from .models import Opportunity, OpportunityReport
+
+from .models import (
+    Opportunity,
+    OpportunityReport,
+    SavedOpportunity,
+)
 
 
 class OpportunitySerializer(serializers.ModelSerializer):
@@ -62,4 +67,27 @@ class OpportunityReportSerializer(serializers.ModelSerializer):
             "user",
             "status",
             "created_at",
+        ]
+
+class SavedOpportunitySerializer(serializers.ModelSerializer):
+
+    opportunity_details = OpportunitySerializer(
+        source="opportunity",
+        read_only=True
+    )
+
+    class Meta:
+        model = SavedOpportunity
+
+        fields = [
+            "id",
+            "opportunity",
+            "opportunity_details",
+            "created_at",
+        ]
+
+        read_only_fields = [
+            "id",
+            "created_at",
+            "opportunity_details",
         ]

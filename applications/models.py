@@ -7,8 +7,8 @@ class SavedOpportunity(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='saved_opportunities'
-    )
+        related_name='application_saved_opportunities' 
+      )
 
     opportunity = models.ForeignKey(
         'opportunities.Opportunity',

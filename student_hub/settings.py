@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-+)^a@)0x9l(($3wqwg)($)3h9o3f1py@vk37lc=*xynl16e&+d
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['opportunityapp.onrender.com', 'localhost', ]
 
 
 # Application definition
@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'applications',
     'organization.apps.OrganizationConfig',
     'notifications',
+    'contact',
 
     'opportunities.apps.OpportunitiesConfig',
 
@@ -138,6 +139,7 @@ REST_FRAMEWORK = {
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    "https://opportunityapp.onrender.com/api/",
 ]
 
 STATIC_URL = 'static/'
