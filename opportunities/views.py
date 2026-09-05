@@ -27,32 +27,34 @@ from notifications.models import Notification
 User = get_user_model()
 
 
-class OpportunityListView(generics.ListAPIView):
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .models import Opportunity
+from .serializers import OpportunitySerializer
 
-    serializer_class = OpportunitySerializer
-    permission_classes = [AllowAny]
 
-    def get_queryset(self):
+class OpportunityListView(APIView):
 
-        queryset = Opportunity.objects.filter(
-            status="verified"
-        ).order_by("-created_at")
+    def get(self, request):
+        opportunities = Opportunity.objects.all()
+        serializer = OpportunitySerializer(opportunities, many=True)
+        return Response(serializer.data)
 
-        category = self.request.query_params.get("category")
-        search = self.request.query_params.get("search")
+    def post(self, request):
+        serializer = OpportunitySerializer(data=request.data)
 
-        if category:
-            queryset = queryset.filter(
-                category=category
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED
             )
 
-        if search:
-            queryset = queryset.filter(
-                title__icontains=search
-            )
-
-        return queryset
-
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 class OpportunityDetailView(generics.RetrieveAPIView):
 
