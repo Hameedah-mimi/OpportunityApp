@@ -50,6 +50,8 @@ INSTALLED_APPS = [
 
     'opportunities.apps.OpportunitiesConfig',
 
+    "drf_spectacular",
+
     
 ]
 
@@ -135,6 +137,15 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Opportuna API",
+    "DESCRIPTION": "API for the Opportuna Student Opportunity Hub",
+    "VERSION": "1.0.0",
 }
 
 CORS_ALLOWED_ORIGINS = [
